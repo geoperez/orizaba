@@ -1,48 +1,60 @@
 angular.module('starter.controllers', [])
 
-.controller('AppCtrl', function($scope, $ionicModal, $timeout) {
-  // Form data for the login modal
-  $scope.loginData = {};
+.controller('AppCtrl', function ($scope, $cordovaGeolocation, $rootScope, $cordovaPush) {
+    document.addEventListener("deviceready", function () {
+            $cordovaPush.register({ "senderID": "dev-firmament-94618", }).then(function(result) {
+                alert("OKSending");
+            }, function(err) {
+                alert("ErrorSending");
+            });
 
-  // Create the login modal that we will use later
-  $ionicModal.fromTemplateUrl('templates/login.html', {
-    scope: $scope
-  }).then(function(modal) {
-    $scope.modal = modal;
-  });
+            $rootScope.$on('$cordovaPush:notificationReceived', function(event, notification) {
+                switch (notification.event) {
+                case 'registered':
+                    if (notification.regid.length > 0) {
+                        $scope.notificationResult = 'registration ID = ' + notification.regid;
+                    }
+                    break;
 
-  // Triggered in the login modal to close it
-  $scope.closeLogin = function() {
-    $scope.modal.hide();
-  };
+                case 'message':
+                    alert('message = ' + notification.message + ' msgCount = ' + notification.msgcnt);
+                    break;
 
-  // Open the login modal
-  $scope.login = function() {
-    $scope.modal.show();
-  };
+                case 'error':
+                    alert('GCM error = ' + notification.msg);
+                    break;
 
-  // Perform the login action when the user submits the login form
-  $scope.doLogin = function() {
-    console.log('Doing login', $scope.loginData);
+                default:
+                    alert('An unknown GCM event has occurred');
+                    break;
+                }
+            });
+        });
 
-    // Simulate a login delay. Remove this and replace with your login
-    // code if using a login system
-    $timeout(function() {
-      $scope.closeLogin();
-    }, 1000);
-  };
+    $cordovaGeolocation.watchPosition({
+        frequency: 1000,
+        timeout: 3000,
+        enableHighAccuracy: false // may cause errors if true
+    }).then(
+        null,
+        function(err) {
+            $scope.gpsError = err;
+        },
+        function(position) {
+            $scope.lat = position.coords.latitude;
+            $scope.long = position.coords.longitude;
+        });
 })
+    .controller('PlaylistsCtrl', function ($scope) {
+        $scope.playlists = [
+          { title: 'Reggae', id: 1 },
+          { title: 'Chill', id: 2 },
+          { title: 'Dubstep', id: 3 },
+          { title: 'Indie', id: 4 },
+          { title: 'Rap', id: 5 },
+          { title: 'Cowbell', id: 6 }
+        ];
+    })
 
-.controller('PlaylistsCtrl', function($scope) {
-  $scope.playlists = [
-    { title: 'Reggae', id: 1 },
-    { title: 'Chill', id: 2 },
-    { title: 'Dubstep', id: 3 },
-    { title: 'Indie', id: 4 },
-    { title: 'Rap', id: 5 },
-    { title: 'Cowbell', id: 6 }
-  ];
-})
-
-.controller('PlaylistCtrl', function($scope, $stateParams) {
+.controller('PlaylistCtrl', function ($scope, $stateParams) {
 });
